@@ -126,7 +126,7 @@ function toggleExpandedCode(button) {
     card.classList.toggle("is-expanded", expanded);
   }
   document.body.classList.toggle("body-locked", expanded);
-  button.textContent = expanded ? "Close" : "Maximize";
+  button.textContent = expanded ? "Restore" : "Maximize";
 }
 
 document.addEventListener("click", (event) => {

@@ -408,11 +408,11 @@ textarea {
   gap: 0.6rem;
 }
 
-.code-close {
+.button.code-close {
   display: none;
 }
 
-.code-card.is-expanded .code-close {
+.code-card.is-expanded .button.code-close {
   display: inline-flex;
 }
 
@@ -421,12 +421,7 @@ textarea {
 }
 
 .code-card.is-expanded .code-backdrop {
-  display: block;
-  position: fixed;
-  inset: 0;
-  z-index: 49;
-  background: rgba(2, 6, 10, 0.6);
-  backdrop-filter: blur(4px);
+  display: none;
 }
 
 .code-scroll {
@@ -448,6 +443,16 @@ textarea {
 
 .body-locked {
   overflow: hidden;
+}
+
+.body-locked::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: rgba(2, 6, 10, 0.6);
+  backdrop-filter: blur(4px);
 }
 
 .ratings-grid {

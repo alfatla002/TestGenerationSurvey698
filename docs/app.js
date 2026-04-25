@@ -194,7 +194,7 @@ function bindGlobalInteractions() {
       panel.classList.toggle("is-expanded", expanded);
       card.classList.toggle("is-expanded", expanded);
       document.body.classList.toggle("body-locked", expanded);
-      expandButton.textContent = expanded ? "Close" : "Maximize";
+      expandButton.textContent = expanded ? "Restore" : "Maximize";
       return;
     }
 
