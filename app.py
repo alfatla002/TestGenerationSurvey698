@@ -259,12 +259,19 @@ def page_shell(title: str, body: str) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{html.escape(title)}</title>
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 </head>
 <body>
   <div class="page-glow page-glow-left"></div>
   <div class="page-glow page-glow-right"></div>
   {body}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+    hljs.highlightAll();
+    </script>
   <script src="/static/app.js"></script>
+    
+    
 </body>
 </html>"""
 
@@ -617,7 +624,7 @@ def survey_page(
                   </div>
                 </div>
                 <div class="code-backdrop" data-target="code-{number}"></div>
-                <pre id="code-{number}" class="code-scroll"><code>{code}</code></pre>
+                <pre id="code-{number}" class="code-scroll"><code class="language-python">{code}</code></pre>
               </section>
               <div class="ratings-grid">{''.join(rating_markup)}</div>
               <label class="comment-block" for="comment_{number}">

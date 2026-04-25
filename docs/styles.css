@@ -193,6 +193,21 @@ a {
   color: var(--muted);
 }
 
+.hero-intro {
+  margin-top: 0.9rem;
+}
+
+.hero-intro p {
+  margin: 0 0 0.65rem;
+  font-size: 0.96rem;
+  line-height: 1.75;
+  color: var(--muted);
+}
+
+.hero-intro p:last-child {
+  margin-bottom: 0;
+}
+
 .eyebrow,
 .group-label,
 .test-count,
@@ -339,6 +354,10 @@ a {
   gap: 1rem;
 }
 
+.identity-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
 .single-column {
   grid-template-columns: 1fr;
 }
@@ -359,6 +378,7 @@ textarea {
   padding: 0.9rem 0.95rem;
   background: rgba(7, 12, 18, 0.76);
   color: var(--text);
+  font-size: 1rem;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,
@@ -457,10 +477,9 @@ textarea {
   position: relative;
   margin-top: 0.8rem;
   overflow: hidden;
-  border: 1px solid rgba(114, 219, 201, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-lg);
-  background: rgba(4, 8, 14, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  background: #1e1e1e;
 }
 
 .code-card.is-expanded {
@@ -469,7 +488,7 @@ textarea {
   z-index: 51;
   display: flex;
   flex-direction: column;
-  background: #03070c;
+  background: #1e1e1e;
   border-radius: 24px;
   box-shadow: 0 36px 110px rgba(0, 0, 0, 0.6);
 }
@@ -477,15 +496,17 @@ textarea {
 .code-toolbar {
   position: relative;
   z-index: 52;
-  padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.025);
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #252526;
 }
 
 .code-title {
-  color: var(--text);
-  font-size: 0.95rem;
-  font-weight: 700;
+  color: #cccccc;
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-family: "Cascadia Code", "Cascadia Mono", "Consolas", "Courier New", monospace;
+  letter-spacing: 0.01em;
 }
 
 .code-actions {
@@ -512,12 +533,40 @@ textarea {
 .code-scroll {
   position: relative;
   z-index: 1;
-  max-height: 24rem;
   margin: 0;
   overflow: auto;
-  padding: 1rem;
-  font-size: 0.92rem;
-  line-height: 1.58;
+  padding: 1.1rem 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  font-family: "Cascadia Code", "Cascadia Mono", "Consolas", "Courier New", monospace;
+  color: #d4d4d4;
+}
+
+.code-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.code-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.code-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Prism VSC Dark+ — card provides background; inherit layout from .code-scroll */
+.code-scroll code[class*="language-"] {
+  background: transparent;
+  padding: 0;
+  font-family: "Cascadia Code", "Cascadia Mono", "Consolas", "Courier New", monospace;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .code-scroll.is-expanded {
@@ -542,7 +591,7 @@ textarea {
 
 .ratings-grid {
   margin-top: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); */
 }
 
 .rating-block {
@@ -667,6 +716,7 @@ button {
   text-decoration: none;
   box-shadow: 0 16px 30px rgba(57, 163, 183, 0.2);
   cursor: pointer;
+  touch-action: manipulation;
   transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
 }
 
@@ -697,6 +747,17 @@ button:hover {
   }
 }
 
+@media (max-width: 900px) {
+  .score-scale {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .score-edge {
+    display: none;
+  }
+}
+
 @media (max-width: 760px) {
   .site-header,
   .test-header,
@@ -719,21 +780,53 @@ button:hover {
     padding: 1rem;
   }
 
-  .invite-grid,
-  .ratings-grid {
+  .invite-grid {
     grid-template-columns: 1fr;
-  }
-
-  .score-scale {
-    grid-template-columns: 1fr;
-    gap: 0.55rem;
-  }
-
-  .score-edge {
-    display: none;
   }
 
   .code-card.is-expanded {
     inset: 3.5rem 0.5rem 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero-intro p {
+    font-size: 0.92rem;
+  }
+
+  .submit-row {
+    flex-direction: column;
+  }
+
+  .submit-row .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .invite-actions {
+    flex-direction: column;
+  }
+
+  .invite-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .rating-block {
+    padding: 0.85rem;
+  }
+
+  .score-options {
+    gap: 0.28rem;
+    padding: 0.25rem;
+  }
+
+  .scale-value {
+    height: 2.75rem;
+    font-size: 0.9rem;
   }
 }

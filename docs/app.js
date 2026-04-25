@@ -64,6 +64,13 @@ function escapeHtml(value = "") {
     .replaceAll('"', "&quot;");
 }
 
+function detectLang(code = "") {
+  if (/\bpublic\s+(class|void|static)\b|@Test\b|import\s+org\.junit/.test(code))
+    return "java";
+  if (/\busing\s+\w+(\.\w+)*;|\[TestMethod\]/.test(code)) return "csharp";
+  return "python";
+}
+
 function buttonScale(name, selected = "") {
   return `
     <div class="score-scale">
@@ -95,7 +102,9 @@ function progressText(form) {
       `specificity_${index}`,
       `technical_soundness_${index}`,
     ];
-    if (names.every((name) => form.querySelector(`input[name="${name}"]:checked`))) {
+    if (
+      names.every((name) => form.querySelector(`input[name="${name}"]:checked`))
+    ) {
       completed += 1;
     }
   }
@@ -108,7 +117,8 @@ function updateProgress(form) {
   const text = document.getElementById("progressText");
   const percent = totalTests ? (completed / totalTests) * 100 : 0;
   if (bar) bar.style.width = `${percent}%`;
-  if (text) text.textContent = `${completed} of ${totalTests} tests fully scored`;
+  if (text)
+    text.textContent = `${completed} of ${totalTests} tests fully scored`;
 }
 
 function setDraftStatus(message, state) {
@@ -144,7 +154,8 @@ async function saveDraft(token, form) {
     }).then(async (response) => {
       const text = await response.text();
       const json = text ? JSON.parse(text) : {};
-      if (!response.ok) throw new Error(json.error || `Save failed (${response.status})`);
+      if (!response.ok)
+        throw new Error(json.error || `Save failed (${response.status})`);
       return json;
     });
     lastSavedSnapshot = snapshot;
@@ -162,8 +173,12 @@ function queueSave(token, form) {
 }
 
 function closeExpandedCode() {
-  document.querySelectorAll(".code-scroll.is-expanded").forEach((panel) => panel.classList.remove("is-expanded"));
-  document.querySelectorAll(".code-card.is-expanded").forEach((card) => card.classList.remove("is-expanded"));
+  document
+    .querySelectorAll(".code-scroll.is-expanded")
+    .forEach((panel) => panel.classList.remove("is-expanded"));
+  document
+    .querySelectorAll(".code-card.is-expanded")
+    .forEach((card) => card.classList.remove("is-expanded"));
   document.querySelectorAll(".code-expand").forEach((button) => {
     button.textContent = "Maximize";
   });
@@ -198,7 +213,10 @@ function bindGlobalInteractions() {
       return;
     }
 
-    if (event.target.closest(".code-close") || event.target.closest(".code-backdrop")) {
+    if (
+      event.target.closest(".code-close") ||
+      event.target.closest(".code-backdrop")
+    ) {
       closeExpandedCode();
     }
   });
@@ -220,7 +238,12 @@ function renderHome(data, statusMap) {
       ${data.invites
         .map((invite) => {
           const status = statusMap[invite.token] || "not started";
-          const statusClass = status === "submitted" ? "invite-status done" : status === "in progress" ? "invite-status active" : "invite-status";
+          const statusClass =
+            status === "submitted"
+              ? "invite-status done"
+              : status === "in progress"
+                ? "invite-status active"
+                : "invite-status";
           const absoluteInviteUrl = `${window.location.origin}${window.location.pathname}${inviteRoute(invite.token)}`;
           return `
             <article class="invite-card">
@@ -248,21 +271,26 @@ function renderHome(data, statusMap) {
 }
 
 function renderSubmitted(invite, state) {
-  shell(`
+  shell(
+    `
     <section class="hero hero-compact">
       <div class="eyebrow">Submitted</div>
       <h1>${escapeHtml(invite.label)}</h1>
       <p>This invite has already been submitted by ${escapeHtml(state.participant_name || "the assigned reviewer")}.</p>
     </section>
-  `, { showNav: false });
+  `,
+    { showNav: false },
+  );
 }
 
 function renderInvite(data, invite, state) {
   const form = data.forms[invite.group];
   const draft = state.draft_payload || {};
-  const participantName = state.participant_name || draft.participant_name || "";
+  const participantName =
+    state.participant_name || draft.participant_name || "";
   const participantProfession = draft.participant_profession || "";
-  shell(`
+  shell(
+    `
     <section class="hero hero-compact">
       <div class="eyebrow">${escapeHtml(invite.label)}</div>
       <h1>LLM-Generated Test Case Evaluation</h1>
@@ -281,7 +309,7 @@ function renderInvite(data, invite, state) {
     <form class="survey-form" data-tests="${form.tests.length}">
       <section class="identity-card">
         <h2>Participant</h2>
-        <div class="identity-grid single-column">
+        <div class="identity-grid">
           <label>
             <span>Your name</span>
             <input name="participant_name" value="${escapeHtml(participantName)}" required>
@@ -318,15 +346,32 @@ function renderInvite(data, invite, state) {
                     <button class="button secondary code-expand" type="button" data-target="code-${test.number}">Maximize</button>
                   </div>
                 </div>
+              
                 <div class="code-backdrop"></div>
-                <pre id="code-${test.number}" class="code-scroll"><code>${escapeHtml(test.code || "# Code unavailable")}</code></pre>
+                <pre id="code-${test.number}" data="  // class="language-${detectLang(test.code)}" class="code-scroll"><code class="language-python" class="language-${detectLang(test.code)}">${escapeHtml(test.code || "# Code unavailable")}</code></pre>
               </section>
               <div class="ratings-grid">
                 ${[
-                  ["readability", "Readability", "The test is easy to read and well structured."],
-                  ["understandability", "Understandability", "The purpose of the test is clear."],
-                  ["specificity", "Specificity", "The test checks a specific and meaningful behavior."],
-                  ["technical_soundness", "Technical Soundness", "The test is technically correct and appropriately written."],
+                  [
+                    "readability",
+                    "Readability",
+                    "The test is easy to read and well structured.",
+                  ],
+                  [
+                    "understandability",
+                    "Understandability",
+                    "The purpose of the test is clear.",
+                  ],
+                  [
+                    "specificity",
+                    "Specificity",
+                    "The test checks a specific and meaningful behavior.",
+                  ],
+                  [
+                    "technical_soundness",
+                    "Technical Soundness",
+                    "The test is technically correct and appropriately written.",
+                  ],
                 ]
                   .map(
                     ([key, title, help]) => `
@@ -353,7 +398,13 @@ function renderInvite(data, invite, state) {
         <button class="button" type="submit">Submit survey</button>
       </div>
     </form>
-  `, { showNav: false });
+  `,
+    { showNav: false },
+  );
+
+  if (window.Prism) {
+    window.Prism.highlightAll();
+  }
 
   const formNode = document.querySelector(".survey-form");
   lastSavedSnapshot = currentFormSnapshot(formNode);
@@ -374,7 +425,11 @@ function renderInvite(data, invite, state) {
     setDraftStatus("Submitting…", "saving");
     const payload = Object.fromEntries(new FormData(formNode).entries());
     try {
-      await apiRequest("POST", { action: "submit", token: invite.token, payload });
+      await apiRequest("POST", {
+        action: "submit",
+        token: invite.token,
+        payload,
+      });
       window.location.hash = "#/";
       await init();
     } catch (error) {
@@ -401,7 +456,9 @@ async function init() {
     const token = current.split("/").pop();
     const invite = data.invites.find((item) => item.token === token);
     if (!invite) {
-      shell(`<section class="hero hero-compact"><div class="eyebrow">Error</div><h1>Unknown invite</h1></section>`);
+      shell(
+        `<section class="hero hero-compact"><div class="eyebrow">Error</div><h1>Unknown invite</h1></section>`,
+      );
       return;
     }
     const state = await apiRequest("POST", { action: "load", token });
@@ -414,7 +471,12 @@ async function init() {
   }
 
   const list = await apiRequest("POST", { action: "list" });
-  renderHome(data, Object.fromEntries(list.invites.map((invite) => [invite.invite_token, invite.status])));
+  renderHome(
+    data,
+    Object.fromEntries(
+      list.invites.map((invite) => [invite.invite_token, invite.status]),
+    ),
+  );
 }
 
 window.addEventListener("hashchange", () => init().catch(renderFatal));
