@@ -165,7 +165,6 @@ function queueSave(token, form) {
 function closeExpandedCode() {
   document.querySelectorAll(".code-scroll.is-expanded").forEach((panel) => panel.classList.remove("is-expanded"));
   document.querySelectorAll(".code-card.is-expanded").forEach((card) => card.classList.remove("is-expanded"));
-  document.querySelectorAll(".code-expand").forEach((button) => (button.textContent = "Maximize"));
   document.body.classList.remove("body-locked");
 }
 
@@ -173,12 +172,12 @@ function bindGlobalInteractions() {
   document.addEventListener("click", (event) => {
     const expandButton = event.target.closest(".code-expand");
     if (expandButton) {
-      const panel = document.getElementById(expandButton.dataset.target);
       const card = expandButton.closest(".code-card");
-      const expanded = panel.classList.toggle("is-expanded");
+      const panel = document.getElementById(expandButton.dataset.target);
+      const expanded = card.classList.toggle("is-expanded");
+      panel.classList.toggle("is-expanded", expanded);
       card.classList.toggle("is-expanded", expanded);
       document.body.classList.toggle("body-locked", expanded);
-      expandButton.textContent = expanded ? "Close" : "Maximize";
       return;
     }
 
@@ -237,6 +236,7 @@ function renderInvite(data, invite, state) {
   const form = data.forms[invite.group];
   const draft = state.draft_payload || {};
   const participantName = state.participant_name || draft.participant_name || "";
+  const participantProfession = draft.participant_profession || "";
   shell(`
     <section class="hero hero-compact">
       <div class="eyebrow">${escapeHtml(invite.label)}</div>
@@ -255,6 +255,10 @@ function renderInvite(data, invite, state) {
           <label>
             <span>Your name</span>
             <input name="participant_name" value="${escapeHtml(participantName)}" required>
+          </label>
+          <label>
+            <span>Profession</span>
+            <input name="participant_profession" value="${escapeHtml(participantProfession)}" placeholder="Optional">
           </label>
         </div>
       </section>
