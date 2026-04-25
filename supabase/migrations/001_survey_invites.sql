@@ -17,11 +17,5 @@ values
   ('group-b-1', 'Group B Reviewer 1', 'B'),
   ('group-b-2', 'Group B Reviewer 2', 'B'),
   ('group-c-1', 'Group C Reviewer 1', 'C'),
-  ('group-c-2', 'Group C Reviewer 2', 'C'),
-  ('group-d-1', 'Group D Reviewer 1', 'D'),
-  ('group-d-2', 'Group D Reviewer 2', 'D'),
-  ('group-e-1', 'Group E Reviewer 1', 'E'),
-  ('group-e-2', 'Group E Reviewer 2', 'E'),
-  ('group-f-1', 'Group F Reviewer 1', 'F'),
-  ('group-f-2', 'Group F Reviewer 2', 'F')
+  ('group-c-2', 'Group C Reviewer 2', 'C')
 on conflict (invite_token) do nothing;

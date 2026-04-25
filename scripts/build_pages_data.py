@@ -10,6 +10,12 @@ FORMS_FILE = BASE_DIR / "google_forms_creator.gs"
 BRIEFS_FILE = BASE_DIR / "issue_briefs_reviewer_final.json"
 OUTPUT_FILE = BASE_DIR / "docs" / "data" / "survey-data.json"
 
+ACTIVE_GROUPS = {
+    "A": ["A", "B"],
+    "B": ["C", "D"],
+    "C": ["E", "F"],
+}
+
 INVITES = [
     {"token": "group-a-1", "group": "A", "label": "Group A Reviewer 1"},
     {"token": "group-a-2", "group": "A", "label": "Group A Reviewer 2"},
@@ -17,12 +23,6 @@ INVITES = [
     {"token": "group-b-2", "group": "B", "label": "Group B Reviewer 2"},
     {"token": "group-c-1", "group": "C", "label": "Group C Reviewer 1"},
     {"token": "group-c-2", "group": "C", "label": "Group C Reviewer 2"},
-    {"token": "group-d-1", "group": "D", "label": "Group D Reviewer 1"},
-    {"token": "group-d-2", "group": "D", "label": "Group D Reviewer 2"},
-    {"token": "group-e-1", "group": "E", "label": "Group E Reviewer 1"},
-    {"token": "group-e-2", "group": "E", "label": "Group E Reviewer 2"},
-    {"token": "group-f-1", "group": "F", "label": "Group F Reviewer 1"},
-    {"token": "group-f-2", "group": "F", "label": "Group F Reviewer 2"},
 ]
 
 
@@ -55,30 +55,33 @@ def build_output() -> dict[str, object]:
     brief_lookup = {
         (str(item["repo"]), int(item["issue_number"])): item for item in briefs
     }
+    source_forms = {str(form["group"]): form for form in forms}
 
     output_forms: dict[str, object] = {}
-    for form in forms:
+    for active_group, source_group_codes in ACTIVE_GROUPS.items():
         tests = []
-        for test in form["tests"]:
-            brief = brief_lookup.get((str(test["repo"]), int(test["issueNumber"])), {})
-            tests.append(
-                {
-                    "number": int(test["number"]),
-                    "repo": str(test["repo"]),
-                    "issueNumber": int(test["issueNumber"]),
-                    "issueTitle": str(brief.get("issue_title") or test["issueTitle"]),
-                    "issueUrl": str(brief.get("issue_url") or test["issueUrl"]),
-                    "whatHappened": str(brief.get("what_happened", "")),
-                    "whatShouldHappen": str(brief.get("what_should_happen", "")),
-                    "whatTestShouldVerify": str(brief.get("what_test_should_verify", "")),
-                    "manualNote": str(brief.get("manual_note", "")),
-                    "context": str(brief.get("context", "")),
-                    "code": extract_code(str(test.get("contextText", ""))),
-                }
-            )
-        output_forms[str(form["group"])] = {
-            "group": str(form["group"]),
-            "title": str(form["title"]),
+        for source_group_code in source_group_codes:
+            form = source_forms[source_group_code]
+            for test in form["tests"]:
+                brief = brief_lookup.get((str(test["repo"]), int(test["issueNumber"])), {})
+                tests.append(
+                    {
+                        "number": len(tests) + 1,
+                        "repo": str(test["repo"]),
+                        "issueNumber": int(test["issueNumber"]),
+                        "issueTitle": str(brief.get("issue_title") or test["issueTitle"]),
+                        "issueUrl": str(brief.get("issue_url") or test["issueUrl"]),
+                        "whatHappened": str(brief.get("what_happened", "")),
+                        "whatShouldHappen": str(brief.get("what_should_happen", "")),
+                        "whatTestShouldVerify": str(brief.get("what_test_should_verify", "")),
+                        "manualNote": str(brief.get("manual_note", "")),
+                        "context": str(brief.get("context", "")),
+                        "code": extract_code(str(test.get("contextText", ""))),
+                    }
+                )
+        output_forms[active_group] = {
+            "group": active_group,
+            "title": f"LLM-Generated Test Case Evaluation (Group {active_group})",
             "tests": tests,
         }
 
@@ -86,7 +89,7 @@ def build_output() -> dict[str, object]:
         "invites": INVITES,
         "forms": output_forms,
         "meta": {
-            "testsPerGroup": 14,
+            "testsPerGroup": 28,
             "groups": sorted(output_forms.keys()),
             "briefSource": BRIEFS_FILE.name,
         },

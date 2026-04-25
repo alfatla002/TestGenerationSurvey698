@@ -45,13 +45,12 @@ async function loadData() {
   return surveyData;
 }
 
-function shell(inner) {
+function shell(inner, options = {}) {
+  const showNav = options.showNav !== false;
   appNode.innerHTML = `
     <header class="site-header">
-      <a class="brand" href="#/">Survey 698</a>
-      <nav class="site-nav">
-        <a href="#/">Invites</a>
-      </nav>
+      <span class="brand">698Survey</span>
+      ${showNav ? `<nav class="site-nav"><a href="#/">Invites</a></nav>` : `<div class="site-nav site-nav-placeholder"></div>`}
     </header>
     <main class="layout">${inner}</main>
   `;
@@ -170,6 +169,19 @@ function closeExpandedCode() {
 
 function bindGlobalInteractions() {
   document.addEventListener("click", (event) => {
+    const copyButton = event.target.closest(".copy-invite");
+    if (copyButton) {
+      const inviteUrl = copyButton.dataset.inviteUrl;
+      navigator.clipboard.writeText(inviteUrl).then(() => {
+        const original = copyButton.textContent;
+        copyButton.textContent = "Copied";
+        window.setTimeout(() => {
+          copyButton.textContent = original;
+        }, 1200);
+      });
+      return;
+    }
+
     const expandButton = event.target.closest(".code-expand");
     if (expandButton) {
       const card = expandButton.closest(".code-card");
@@ -194,25 +206,34 @@ function bindGlobalInteractions() {
 function renderHome(data, statusMap) {
   shell(`
     <section class="hero">
-      <div class="eyebrow">GitHub Pages + Supabase</div>
-      <h1>Invite links for your 12 reviewers.</h1>
-      <p>Each reviewer gets a dedicated link. Progress autosaves per link and can be resumed later.</p>
-      <div class="hero-note">Brief text comes from <code>${escapeHtml(data.meta.briefSource)}</code>. Code comes from the forms source file.</div>
+      <div class="eyebrow">Reviewer Dashboard</div>
+      <h1>Open or share the active reviewer invites.</h1>
+      <p>There are currently 3 active groups with 28 tests each. Each invite has its own progress state and can be reopened later from the same link.</p>
+      <div class="hero-note">Use <code>Open survey</code> to enter directly, or <code>Copy invite link</code> to send the unique URL to a reviewer.</div>
     </section>
-    <section class="group-grid">
+    <section class="invite-grid">
       ${data.invites
         .map((invite) => {
           const status = statusMap[invite.token] || "not started";
           const statusClass = status === "submitted" ? "invite-status done" : status === "in progress" ? "invite-status active" : "invite-status";
+          const absoluteInviteUrl = `${window.location.origin}${window.location.pathname}${inviteRoute(invite.token)}`;
           return `
             <article class="invite-card">
               <div class="invite-topline">
-                <div class="group-label">${escapeHtml(invite.label)}</div>
+                <div>
+                  <div class="group-label">${escapeHtml(invite.label)}</div>
+                  <h2>Group ${escapeHtml(invite.group)}</h2>
+                </div>
                 <span class="${statusClass}">${escapeHtml(status)}</span>
               </div>
-              <h2>Group ${escapeHtml(invite.group)}</h2>
-              <p><a class="inline-link" href="${inviteRoute(invite.token)}">${window.location.origin}${window.location.pathname}${inviteRoute(invite.token)}</a></p>
-              <a class="button" href="${inviteRoute(invite.token)}">Open survey</a>
+              <div class="invite-meta">
+                <span class="invite-token">${escapeHtml(invite.token)}</span>
+                <span class="invite-helper">Unique link for this reviewer</span>
+              </div>
+              <div class="invite-actions">
+                <a class="button" href="${inviteRoute(invite.token)}">Open survey</a>
+                <button class="button secondary copy-invite" type="button" data-invite-url="${escapeHtml(absoluteInviteUrl)}">Copy invite link</button>
+              </div>
             </article>
           `;
         })
@@ -227,9 +248,8 @@ function renderSubmitted(invite, state) {
       <div class="eyebrow">Submitted</div>
       <h1>${escapeHtml(invite.label)}</h1>
       <p>This invite has already been submitted by ${escapeHtml(state.participant_name || "the assigned reviewer")}.</p>
-      <a class="button secondary" href="#/">Back to invite list</a>
     </section>
-  `);
+  `, { showNav: false });
 }
 
 function renderInvite(data, invite, state) {
@@ -240,8 +260,13 @@ function renderInvite(data, invite, state) {
   shell(`
     <section class="hero hero-compact">
       <div class="eyebrow">${escapeHtml(invite.label)}</div>
-      <h1>Group ${escapeHtml(invite.group)} survey</h1>
-      <p>Review the generated test, rate it, and continue later from the same invite link.</p>
+      <h1>LLM-Generated Test Case Evaluation</h1>
+      <div class="hero-intro">
+        <p>This survey is part of a research study evaluating the quality of unit tests automatically generated from software issue reports. For each test case, you will be provided with a brief issue summary and the corresponding generated test code. You are asked to evaluate each test across four dimensions: readability, understandability, specificity, and technical soundness.</p>
+        <p>Please rate each test using a 5-point scale (1 = Strongly Disagree to 5 = Strongly Agree), based on how clear, focused, and technically appropriate the test appears. Evaluate each test independently using only the information provided, without making assumptions beyond the given context.</p>
+        <p>The survey consists of 28 test cases and is expected to take approximately 2-2.5 hours to complete. Your responses will be automatically saved as you progress. Please ensure that you complete the survey using the same link provided to you.</p>
+        <p>Thank you for your time and contribution to this study.</p>
+      </div>
       <div class="progress-banner">
         <span id="progressText">0 of ${form.tests.length} tests fully scored</span>
         <div class="progress-track"><div id="progressBar"></div></div>
@@ -323,7 +348,7 @@ function renderInvite(data, invite, state) {
         <button class="button" type="submit">Submit survey</button>
       </div>
     </form>
-  `);
+  `, { showNav: false });
 
   const formNode = document.querySelector(".survey-form");
   lastSavedSnapshot = currentFormSnapshot(formNode);
