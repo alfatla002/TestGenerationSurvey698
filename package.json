@@ -1,0 +1,23 @@
+{
+  "name": "webappsurvey698",
+  "version": "1.0.0",
+  "description": "This replaces the Google Forms presentation with a local dark-themed web app that reads the survey definitions directly from `google_forms_creator.gs`.",
+  "main": "index.js",
+  "scripts": {
+    "build:data": "python3 scripts/build_pages_data.py",
+    "build": "npm run build:data",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "esbuild": "^0.28.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "supabase": "^2.95.2"
+  }
+}
