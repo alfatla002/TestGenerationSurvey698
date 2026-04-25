@@ -33,7 +33,7 @@ RATING_FIELDS = [
         "The test is technically correct and appropriately written.",
     ),
 ]
-RATING_VALUES = [0, 1, 2, 3, 4, 5]
+RATING_VALUES = [1, 2, 3, 4, 5]
 
 INVITES = [
     {"token": "group-a-1", "group": "A", "label": "Group A Reviewer 1"},
@@ -757,7 +757,7 @@ def validate_submission(form: dict[str, object], payload: dict[str, str]) -> str
         number = int(test["number"])
         for field_key, _, _ in RATING_FIELDS:
             value = payload.get(f"{field_key}_{number}", "").strip()
-            if value not in {"0", "1", "2", "3", "4", "5"}:
+            if value not in {"1", "2", "3", "4", "5"}:
                 return f"Every rating must be completed. Missing {field_key.replace('_', ' ')} for test {number}."
     return None
 

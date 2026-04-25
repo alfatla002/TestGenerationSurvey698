@@ -119,7 +119,9 @@ function toggleExpandedCode(button) {
   }
 
   const card = button.closest(".code-card");
-  const expanded = panel.classList.toggle("is-expanded");
+  const expanded = !panel.classList.contains("is-expanded");
+  closeExpandedCode();
+  panel.classList.toggle("is-expanded", expanded);
   if (card) {
     card.classList.toggle("is-expanded", expanded);
   }

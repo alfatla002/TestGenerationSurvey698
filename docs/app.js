@@ -69,7 +69,7 @@ function buttonScale(name, selected = "") {
     <div class="score-scale">
       <span class="score-edge">Strongly disagree</span>
       <div class="score-options">
-        ${[0, 1, 2, 3, 4, 5]
+        ${[1, 2, 3, 4, 5]
           .map(
             (value) => `
               <label class="scale-option">
@@ -164,6 +164,9 @@ function queueSave(token, form) {
 function closeExpandedCode() {
   document.querySelectorAll(".code-scroll.is-expanded").forEach((panel) => panel.classList.remove("is-expanded"));
   document.querySelectorAll(".code-card.is-expanded").forEach((card) => card.classList.remove("is-expanded"));
+  document.querySelectorAll(".code-expand").forEach((button) => {
+    button.textContent = "Maximize";
+  });
   document.body.classList.remove("body-locked");
 }
 
@@ -186,10 +189,12 @@ function bindGlobalInteractions() {
     if (expandButton) {
       const card = expandButton.closest(".code-card");
       const panel = document.getElementById(expandButton.dataset.target);
-      const expanded = card.classList.toggle("is-expanded");
+      const expanded = !card.classList.contains("is-expanded");
+      closeExpandedCode();
       panel.classList.toggle("is-expanded", expanded);
       card.classList.toggle("is-expanded", expanded);
       document.body.classList.toggle("body-locked", expanded);
+      expandButton.textContent = expanded ? "Close" : "Maximize";
       return;
     }
 

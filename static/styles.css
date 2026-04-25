@@ -379,7 +379,15 @@ textarea {
 }
 
 .code-card.is-expanded {
-  overflow: visible;
+  position: fixed;
+  inset: 4rem 1rem 1rem;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #02070d;
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.6);
 }
 
 .code-toolbar {
@@ -433,13 +441,9 @@ textarea {
 }
 
 .code-scroll.is-expanded {
-  position: fixed;
-  inset: 4rem 1rem 1rem;
-  z-index: 51;
+  flex: 1 1 auto;
+  min-height: 0;
   max-height: none;
-  border-radius: 24px;
-  background: #02070d;
-  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.6);
 }
 
 .body-locked {
@@ -491,7 +495,7 @@ textarea {
 
 .score-options {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.35rem;
   padding: 0.3rem;
   border-radius: 16px;
@@ -643,7 +647,7 @@ th {
     display: none;
   }
 
-  .code-scroll.is-expanded {
+  .code-card.is-expanded {
     inset: 3.5rem 0.5rem 0.5rem;
   }
 }

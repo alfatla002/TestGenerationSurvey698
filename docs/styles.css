@@ -582,7 +582,7 @@ textarea {
 
 .score-options {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.38rem;
   padding: 0.34rem;
   border: 1px solid rgba(255, 255, 255, 0.05);

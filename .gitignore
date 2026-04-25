@@ -6,3 +6,4 @@ survey.db
 .env
 .env.*
 supabase/.temp/
+HANDOFF.md
