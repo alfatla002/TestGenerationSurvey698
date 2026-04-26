@@ -348,6 +348,42 @@ a {
   padding: 1.35rem;
 }
 
+.results-panel {
+  padding: 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(16, 26, 38, 0.98), rgba(10, 18, 27, 1)),
+    linear-gradient(140deg, rgba(79, 183, 214, 0.05), transparent 30%);
+  box-shadow: var(--shadow-md);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: inherit;
+}
+
+th,
+td {
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  color: var(--text);
+  font-weight: 800;
+}
+
 .identity-grid,
 .ratings-grid {
   display: grid;

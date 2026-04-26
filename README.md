@@ -52,6 +52,21 @@ The backend stores one row per invite token with status:
 
 Drafts autosave per invite link and can be resumed later from that same link.
 
+## Viewing submitted results
+
+The GitHub Pages app has a results page at:
+
+```text
+https://YOUR_GITHUB_PAGES_URL/#/results
+```
+
+It lists submitted invites and provides two CSV downloads:
+
+- `survey-responses.csv`: one row per participant/test with the four ratings and comment
+- `survey-submissions.csv`: one row per submitted invite with the raw submitted JSON payload
+
+This page uses the Supabase Edge Function `results` action, so redeploy the Edge Function after changing `supabase/functions/survey-invite/index.ts`.
+
 ## Notes
 
 - The frontend is static and GitHub Pages compatible.

@@ -15,6 +15,10 @@ function inviteRoute(token) {
   return `#/invite/${token}`;
 }
 
+function resultsRoute() {
+  return "#/results";
+}
+
 function edgeUrl(path = "") {
   return `${config.supabaseUrl}/functions/v1/${config.functionName}${path}`;
 }
@@ -50,7 +54,7 @@ function shell(inner, options = {}) {
   appNode.innerHTML = `
     <header class="site-header">
       <span class="brand">698Survey</span>
-      ${showNav ? `<nav class="site-nav"><a href="#/">Invites</a></nav>` : `<div class="site-nav site-nav-placeholder"></div>`}
+      ${showNav ? `<nav class="site-nav"><a href="#/">Invites</a><a href="${resultsRoute()}">Results</a></nav>` : `<div class="site-nav site-nav-placeholder"></div>`}
     </header>
     <main class="layout">${inner}</main>
   `;
@@ -226,13 +230,80 @@ function bindGlobalInteractions() {
   });
 }
 
+function csvCell(value = "") {
+  const text = String(value ?? "");
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function rowsToCsv(headers, rows) {
+  return [
+    headers.map(csvCell).join(","),
+    ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(",")),
+  ].join("\n");
+}
+
+function downloadCsv(filename, headers, rows) {
+  const csv = rowsToCsv(headers, rows);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function submittedPayload(row) {
+  return row.submitted_payload || {};
+}
+
+function buildSubmissionRows(submissions) {
+  return submissions.map((row) => {
+    const payload = submittedPayload(row);
+    return {
+      invite_token: row.invite_token,
+      participant_label: row.participant_label,
+      group_code: row.group_code,
+      participant_name: row.participant_name || payload.participant_name || "",
+      participant_profession: payload.participant_profession || "",
+      submitted_at: row.submitted_at || "",
+      submitted_payload: JSON.stringify(payload),
+    };
+  });
+}
+
+function buildResponseRows(submissions, testCount = 28) {
+  return submissions.flatMap((row) => {
+    const payload = submittedPayload(row);
+    return Array.from({ length: testCount }, (_, index) => {
+      const testNumber = index + 1;
+      return {
+        invite_token: row.invite_token,
+        participant_label: row.participant_label,
+        group_code: row.group_code,
+        participant_name: row.participant_name || payload.participant_name || "",
+        participant_profession: payload.participant_profession || "",
+        submitted_at: row.submitted_at || "",
+        test_number: testNumber,
+        readability: payload[`readability_${testNumber}`] || "",
+        understandability: payload[`understandability_${testNumber}`] || "",
+        specificity: payload[`specificity_${testNumber}`] || "",
+        technical_soundness: payload[`technical_soundness_${testNumber}`] || "",
+        comment: payload[`comment_${testNumber}`] || "",
+      };
+    });
+  });
+}
+
 function renderHome(data, statusMap) {
   shell(`
     <section class="hero">
       <div class="eyebrow">Reviewer Dashboard</div>
       <h1>Open or share the active reviewer invites.</h1>
       <p>There are currently 3 active groups with 28 tests each. Each invite has its own progress state and can be reopened later from the same link.</p>
-      <div class="hero-note">Use <code>Open survey</code> to enter directly, or <code>Copy invite link</code> to send the unique URL to a reviewer.</div>
+      <div class="hero-note">Use <code>Open survey</code> to enter directly, <code>Copy invite link</code> to send the unique URL to a reviewer, or <a href="${resultsRoute()}">open results</a> after submissions arrive.</div>
     </section>
     <section class="invite-grid">
       ${data.invites
@@ -268,6 +339,88 @@ function renderHome(data, statusMap) {
         .join("")}
     </section>
   `);
+}
+
+function renderResults(submissions) {
+  const summaryRows = buildSubmissionRows(submissions);
+  const responseRows = buildResponseRows(submissions);
+  const summaryHeaders = [
+    "invite_token",
+    "participant_label",
+    "group_code",
+    "participant_name",
+    "participant_profession",
+    "submitted_at",
+    "submitted_payload",
+  ];
+  const responseHeaders = [
+    "invite_token",
+    "participant_label",
+    "group_code",
+    "participant_name",
+    "participant_profession",
+    "submitted_at",
+    "test_number",
+    "readability",
+    "understandability",
+    "specificity",
+    "technical_soundness",
+    "comment",
+  ];
+
+  shell(`
+    <section class="hero hero-compact">
+      <div class="eyebrow">Results</div>
+      <h1>Submitted survey responses</h1>
+      <p>${submissions.length} submitted invite${submissions.length === 1 ? "" : "s"} found. Export the full JSON summary or one row per reviewed test.</p>
+      <div class="button-row">
+        <button class="button" type="button" id="downloadResponses">Download response rows CSV</button>
+        <button class="button secondary" type="button" id="downloadSubmissions">Download submissions CSV</button>
+      </div>
+    </section>
+    <section class="results-panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Invite</th>
+              <th>Group</th>
+              <th>Name</th>
+              <th>Profession</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              submissions.length
+                ? submissions
+                    .map((row) => {
+                      const payload = submittedPayload(row);
+                      return `
+                        <tr>
+                          <td>${escapeHtml(row.participant_label || row.invite_token)}</td>
+                          <td>${escapeHtml(row.group_code || "")}</td>
+                          <td>${escapeHtml(row.participant_name || payload.participant_name || "")}</td>
+                          <td>${escapeHtml(payload.participant_profession || "")}</td>
+                          <td>${escapeHtml(row.submitted_at || "")}</td>
+                        </tr>
+                      `;
+                    })
+                    .join("")
+                : `<tr><td colspan="5">No submitted surveys yet.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `);
+
+  document.getElementById("downloadResponses")?.addEventListener("click", () => {
+    downloadCsv("survey-responses.csv", responseHeaders, responseRows);
+  });
+  document.getElementById("downloadSubmissions")?.addEventListener("click", () => {
+    downloadCsv("survey-submissions.csv", summaryHeaders, summaryRows);
+  });
 }
 
 function renderSubmitted(invite, state) {
@@ -452,6 +605,12 @@ async function init() {
   }
 
   const current = route();
+  if (current === "/results") {
+    const results = await apiRequest("POST", { action: "results" });
+    renderResults(results.submissions || []);
+    return;
+  }
+
   if (current.startsWith("/invite/")) {
     const token = current.split("/").pop();
     const invite = data.invites.find((item) => item.token === token);
