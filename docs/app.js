@@ -274,11 +274,16 @@ function buildSubmissionRows(submissions) {
   });
 }
 
-function buildResponseRows(submissions, testCount = 28) {
+function testLookup(data, groupCode, testNumber) {
+  return data.forms?.[groupCode]?.tests?.find((test) => Number(test.number) === Number(testNumber)) || {};
+}
+
+function buildResponseRows(data, submissions, testCount = 28) {
   return submissions.flatMap((row) => {
     const payload = submittedPayload(row);
     return Array.from({ length: testCount }, (_, index) => {
       const testNumber = index + 1;
+      const test = testLookup(data, row.group_code, testNumber);
       return {
         invite_token: row.invite_token,
         participant_label: row.participant_label,
@@ -287,6 +292,9 @@ function buildResponseRows(submissions, testCount = 28) {
         participant_profession: payload.participant_profession || "",
         submitted_at: row.submitted_at || "",
         test_number: testNumber,
+        issue_number: test.issueNumber || "",
+        issue_title: test.issueTitle || "",
+        issue_url: test.issueUrl || "",
         readability: payload[`readability_${testNumber}`] || "",
         understandability: payload[`understandability_${testNumber}`] || "",
         specificity: payload[`specificity_${testNumber}`] || "",
@@ -341,9 +349,9 @@ function renderHome(data, statusMap) {
   `);
 }
 
-function renderResults(submissions) {
+function renderResults(data, submissions) {
   const summaryRows = buildSubmissionRows(submissions);
-  const responseRows = buildResponseRows(submissions);
+  const responseRows = buildResponseRows(data, submissions);
   const summaryHeaders = [
     "invite_token",
     "participant_label",
@@ -361,6 +369,9 @@ function renderResults(submissions) {
     "participant_profession",
     "submitted_at",
     "test_number",
+    "issue_number",
+    "issue_title",
+    "issue_url",
     "readability",
     "understandability",
     "specificity",
@@ -607,7 +618,7 @@ async function init() {
   const current = route();
   if (current === "/results") {
     const results = await apiRequest("POST", { action: "results" });
-    renderResults(results.submissions || []);
+    renderResults(data, results.submissions || []);
     return;
   }
 
