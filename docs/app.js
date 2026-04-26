@@ -383,9 +383,9 @@ function renderResults(data, submissions) {
     <section class="hero hero-compact">
       <div class="eyebrow">Results</div>
       <h1>Submitted survey responses</h1>
-      <p>${submissions.length} submitted invite${submissions.length === 1 ? "" : "s"} found. Export the full JSON summary or one row per reviewed test.</p>
+      <p>${submissions.length} submitted invite${submissions.length === 1 ? "" : "s"} found. Export one row per reviewed test with issue metadata, or the full JSON summary.</p>
       <div class="button-row">
-        <button class="button" type="button" id="downloadResponses">Download response rows CSV</button>
+        <button class="button" type="button" id="downloadResponses">Download per-question CSV</button>
         <button class="button secondary" type="button" id="downloadSubmissions">Download submissions CSV</button>
       </div>
     </section>
@@ -397,28 +397,37 @@ function renderResults(data, submissions) {
               <th>Invite</th>
               <th>Group</th>
               <th>Name</th>
-              <th>Profession</th>
-              <th>Submitted</th>
+              <th>Test</th>
+              <th>Issue</th>
+              <th>Issue title</th>
+              <th>Readability</th>
+              <th>Understandability</th>
+              <th>Specificity</th>
+              <th>Technical soundness</th>
             </tr>
           </thead>
           <tbody>
             ${
-              submissions.length
-                ? submissions
+              responseRows.length
+                ? responseRows
                     .map((row) => {
-                      const payload = submittedPayload(row);
                       return `
                         <tr>
                           <td>${escapeHtml(row.participant_label || row.invite_token)}</td>
                           <td>${escapeHtml(row.group_code || "")}</td>
-                          <td>${escapeHtml(row.participant_name || payload.participant_name || "")}</td>
-                          <td>${escapeHtml(payload.participant_profession || "")}</td>
-                          <td>${escapeHtml(row.submitted_at || "")}</td>
+                          <td>${escapeHtml(row.participant_name || "")}</td>
+                          <td>${escapeHtml(row.test_number)}</td>
+                          <td>${escapeHtml(row.issue_number)}</td>
+                          <td>${escapeHtml(row.issue_title)}</td>
+                          <td>${escapeHtml(row.readability)}</td>
+                          <td>${escapeHtml(row.understandability)}</td>
+                          <td>${escapeHtml(row.specificity)}</td>
+                          <td>${escapeHtml(row.technical_soundness)}</td>
                         </tr>
                       `;
                     })
                     .join("")
-                : `<tr><td colspan="5">No submitted surveys yet.</td></tr>`
+                : `<tr><td colspan="10">No submitted surveys yet.</td></tr>`
             }
           </tbody>
         </table>
