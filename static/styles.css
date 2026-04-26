@@ -590,6 +590,23 @@ button {
   box-shadow: none;
 }
 
+.button.danger {
+  background: rgba(220, 38, 38, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  box-shadow: none;
+}
+
+.button.danger:hover {
+  background: rgba(220, 38, 38, 0.28);
+}
+
+.button.small {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  min-width: unset;
+}
+
 .flash-error {
   padding: 1rem 1.2rem;
   margin-bottom: 1rem;

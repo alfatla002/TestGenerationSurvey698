@@ -5,7 +5,6 @@ import datetime as dt
 import html
 import io
 import json
-import re
 import sqlite3
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,14 +13,14 @@ from urllib.parse import parse_qs, urlparse
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_FILE = BASE_DIR / "google_forms_creator.gs"
-ISSUE_BRIEFS_FILE = BASE_DIR / "issue_briefs_reviewer_final.json"
+DATA_FILE = BASE_DIR / "docs" / "data" / "survey-data.json"
+ISSUE_BRIEFS_FILE = BASE_DIR / "issue_briefs_merged.json"
 DB_FILE = BASE_DIR / "survey.db"
 STATIC_DIR = BASE_DIR / "static"
 HOST = "127.0.0.1"
 PORT = 8000
 GROUP_CODES = ["A", "B", "C", "D", "E", "F"]
-TESTS_PER_GROUP = 14
+TESTS_PER_GROUP = 28
 
 RATING_FIELDS = [
     ("readability", "Readability", "The test is easy to read and well structured."),
@@ -63,17 +62,37 @@ def load_survey_data() -> dict[str, object]:
         SURVEY_DATA = build_survey_data_from_issue_briefs()
         return SURVEY_DATA
 
-    source = DATA_FILE.read_text(encoding="utf-8")
-    match = re.search(
-        r"const SURVEY_DATA = (\{.*?\n\});\n\nfunction createRustForms",
-        source,
-        re.S,
-    )
-    if not match:
-        SURVEY_DATA = build_survey_data_from_issue_briefs()
-        return SURVEY_DATA
+    raw = json.loads(DATA_FILE.read_text(encoding="utf-8"))
 
-    SURVEY_DATA = json.loads(match.group(1))
+    # Build a bucket lookup from issue_briefs_merged.json so we can
+    # populate test["bucket"] which app.py stores in the DB.
+    bucket_by_issue: dict[tuple[str, int], str] = {}
+    if ISSUE_BRIEFS_FILE.exists():
+        for b in json.loads(ISSUE_BRIEFS_FILE.read_text(encoding="utf-8")):
+            key = (str(b.get("repo", "")), int(b.get("issue_number", 0)))
+            bucket_by_issue[key] = str(b.get("verification_bucket", ""))
+
+    # docs/data/survey-data.json stores forms as a dict keyed by group letter.
+    # Convert to the list-of-dicts format the rest of app.py expects.
+    forms_raw = raw.get("forms", {})
+    forms: list[dict[str, object]] = []
+    for group_code, form_data in (forms_raw.items() if isinstance(forms_raw, dict) else []):
+        enriched_tests = []
+        for t in form_data.get("tests", []):
+            key = (str(t.get("repo", "")), int(t.get("issueNumber", 0)))
+            enriched_tests.append({
+                **t,
+                "bucket": bucket_by_issue.get(key, ""),
+                "issueUrl": t.get("issueUrl") or "",
+            })
+        forms.append({
+            "group": group_code,
+            "title": form_data.get("title", f"LLM-Generated Test Case Evaluation (Group {group_code})"),
+            "description": form_data.get("description", ""),
+            "tests": enriched_tests,
+        })
+
+    SURVEY_DATA = {"forms": forms}
     return SURVEY_DATA
 
 
@@ -376,6 +395,12 @@ def admin_page() -> str:
               <td>{html.escape(row["group_code"])}</td>
               <td>{row["response_count"]}</td>
               <td>{html.escape(row["created_at"])}</td>
+              <td>
+                <form method="post" action="/admin/delete/{row['id']}"
+                      onsubmit="return confirm('Delete submission #{row['id']} from {html.escape(row['participant_name'])}?')">
+                  <button type="submit" class="button danger small">Delete</button>
+                </form>
+              </td>
             </tr>
             """
         )
@@ -422,6 +447,7 @@ def admin_page() -> str:
                 <th>Group</th>
                 <th>Responses</th>
                 <th>Submitted</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -663,6 +689,7 @@ def survey_page(
           <div class="identity-grid single-column">
             <label>
               <span>Your name</span>
+              "
               <input name="participant_name" value="{html.escape(previous.get('participant_name', ''))}" required>
             </label>
           </div>
@@ -730,6 +757,10 @@ def extract_code_block(context_text: str) -> str:
 
 
 def load_test_code(test: dict[str, object]) -> str:
+    # Preferred: inline code field from survey-data.json
+    if test.get("code"):
+        return str(test["code"]).strip()
+
     generated_path = str(test.get("generatedTestFile") or "").strip()
     if generated_path:
         path = BASE_DIR / generated_path
@@ -923,6 +954,27 @@ class SurveyHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+
+        if path.startswith("/admin/delete/"):
+            try:
+                submission_id = int(path.rsplit("/", 1)[-1])
+            except ValueError:
+                return self.respond_error(HTTPStatus.BAD_REQUEST, "Invalid submission ID")
+            with db_connection() as conn:
+                row = conn.execute(
+                    "SELECT invite_token FROM submissions WHERE id = ?", (submission_id,)
+                ).fetchone()
+                if not row:
+                    return self.respond_error(HTTPStatus.NOT_FOUND, "Submission not found")
+                invite_token = row["invite_token"]
+                conn.execute("DELETE FROM submissions WHERE id = ?", (submission_id,))
+                try:
+                    conn.execute("DELETE FROM drafts WHERE invite_token = ?", (invite_token,))
+                except sqlite3.OperationalError:
+                    pass
+                conn.commit()
+            return self.redirect("/admin")
+
         if path.startswith("/draft/"):
             token = path.rsplit("/", 1)[-1]
             invite = get_invite(token)
@@ -984,6 +1036,12 @@ class SurveyHandler(BaseHTTPRequestHandler):
         elif target.suffix == ".js":
             content_type = "application/javascript; charset=utf-8"
         return self.respond_bytes(target.read_bytes(), content_type)
+
+    def redirect(self, location: str) -> None:
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def respond_html(self, markup: str, status: HTTPStatus = HTTPStatus.OK) -> None:
         self.respond_bytes(markup.encode("utf-8"), "text/html; charset=utf-8", status)
