@@ -17,7 +17,7 @@ BASE = Path(__file__).resolve().parent
 
 def strip_boilerplate_real_crlf(text: str) -> str:
     """Remove boilerplate from strings that contain REAL CR+LF bytes."""
-    # Combined: HTML WARNING comment block + ## Checklist section
+    # Combined: WARNING comment block (properly closed) + ## Checklist section
     text = re.sub(
         r"<!--\r.*?-->\r?\n?(\r?\n)*## Checklist.*?\.\.\.",
         "",
@@ -26,8 +26,10 @@ def strip_boilerplate_real_crlf(text: str) -> str:
     )
     # Standalone ## Checklist (no preceding WARNING comment)
     text = re.sub(r"## Checklist.*?\.\.\.", "", text, flags=re.DOTALL)
-    # Standalone HTML WARNING comment block
+    # Standalone WARNING comment block (properly closed with -->)
     text = re.sub(r"<!--\r.*?-->", "", text, flags=re.DOTALL)
+    # Truncated WARNING comment block (cut off before --> ends with ...)
+    text = re.sub(r"<!--\r.*?\.\.\.", "", text, flags=re.DOTALL)
     # Clean up excess CR+LF whitespace at the start
     text = text.lstrip("\r\n")
     return text
@@ -74,18 +76,44 @@ else:
 # Clean issue_briefs_merged.json (what_happened field)
 # ---------------------------------------------------------------------------
 
+MARKER = "IGNORING THE FOLLOWING TEMPLATE"
+TEXT_FIELDS = [
+    "what_happened",
+    "what_should_happen",
+    "what_test_should_verify",
+    "issueSummary",
+    "reviewerDescription",
+    "contextText",
+]
+
 briefs_file = BASE / "issue_briefs_merged.json"
 if briefs_file.exists():
     briefs = json.loads(briefs_file.read_text(encoding="utf-8"))
-    changed = 0
+    total_cleaned = 0
+    field_counts: dict[str, int] = {}
     for entry in briefs:
-        wh = entry.get("what_happened", "")
-        if "## Checklist" in wh or "IGNORING THE FOLLOWING TEMPLATE" in wh:
-            entry["what_happened"] = strip_boilerplate_real_crlf(wh)
-            changed += 1
+        for field in TEXT_FIELDS:
+            val = entry.get(field, "")
+            if not isinstance(val, str):
+                continue
+            if MARKER in val or "## Checklist" in val:
+                entry[field] = strip_boilerplate_real_crlf(val)
+                field_counts[field] = field_counts.get(field, 0) + 1
+                total_cleaned += 1
+
+    # Verify nothing remains
+    remaining = sum(
+        1 for entry in briefs
+        for field in TEXT_FIELDS
+        if isinstance(entry.get(field), str) and MARKER in entry[field]
+    )
+
     briefs_file.write_text(
         json.dumps(briefs, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print(f"\nissue_briefs_merged.json: cleaned {changed} entries")
+    print(f"\nissue_briefs_merged.json: cleaned {total_cleaned} field occurrences")
+    for field, count in sorted(field_counts.items()):
+        print(f"  {field}: {count}")
+    print(f"  remaining WARNING blocks after cleanup: {remaining}")
 else:
     print("issue_briefs_merged.json not found, skipping")
