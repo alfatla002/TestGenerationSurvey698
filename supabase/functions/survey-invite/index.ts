@@ -37,6 +37,16 @@ Deno.serve(async (request) => {
     return json({ invites: data });
   }
 
+  if (action === "results") {
+    const { data, error } = await supabase
+      .from("survey_invites")
+      .select("invite_token, participant_label, group_code, participant_name, status, submitted_payload, submitted_at")
+      .eq("status", "submitted")
+      .order("submitted_at", { ascending: true });
+    if (error) return json({ error: error.message }, 500);
+    return json({ submissions: data });
+  }
+
   const token = body.token as string | undefined;
   if (!token) return json({ error: "Missing invite token" }, 400);
 
