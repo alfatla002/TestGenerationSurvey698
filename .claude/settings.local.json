@@ -5,7 +5,8 @@
       "Bash(curl -sL \"https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js\" -o \"e:/bugtotest/TestGenerationSurvey698/docs/vendor/prism-python.min.js\")",
       "Bash(curl -sL \"https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js\" -o \"e:/bugtotest/TestGenerationSurvey698/docs/vendor/prism-java.min.js\")",
       "Bash(curl -sL \"https://cdn.jsdelivr.net/npm/prism-themes@1.9.0/themes/prism-vsc-dark-plus.min.css\" -o \"e:/bugtotest/TestGenerationSurvey698/docs/vendor/prism-vsc-dark-plus.min.css\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(python -)"
     ]
   }
 }

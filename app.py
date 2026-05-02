@@ -64,14 +64,6 @@ def load_survey_data() -> dict[str, object]:
 
     raw = json.loads(DATA_FILE.read_text(encoding="utf-8"))
 
-    # Build a bucket lookup from issue_briefs_merged.json so we can
-    # populate test["bucket"] which app.py stores in the DB.
-    bucket_by_issue: dict[tuple[str, int], str] = {}
-    if ISSUE_BRIEFS_FILE.exists():
-        for b in json.loads(ISSUE_BRIEFS_FILE.read_text(encoding="utf-8")):
-            key = (str(b.get("repo", "")), int(b.get("issue_number", 0)))
-            bucket_by_issue[key] = str(b.get("verification_bucket", ""))
-
     # docs/data/survey-data.json stores forms as a dict keyed by group letter.
     # Convert to the list-of-dicts format the rest of app.py expects.
     forms_raw = raw.get("forms", {})
@@ -79,10 +71,9 @@ def load_survey_data() -> dict[str, object]:
     for group_code, form_data in (forms_raw.items() if isinstance(forms_raw, dict) else []):
         enriched_tests = []
         for t in form_data.get("tests", []):
-            key = (str(t.get("repo", "")), int(t.get("issueNumber", 0)))
             enriched_tests.append({
                 **t,
-                "bucket": bucket_by_issue.get(key, ""),
+                "bucket": "",
                 "issueUrl": t.get("issueUrl") or "",
             })
         forms.append({
@@ -122,7 +113,7 @@ def build_survey_data_from_issue_briefs() -> dict[str, object]:
                 {
                     "number": number,
                     "repo": brief["repo"],
-                    "bucket": brief.get("verification_bucket", ""),
+                    "bucket": "",
                     "issueNumber": brief["issue_number"],
                     "issueTitle": brief["issue_title"],
                     "issueSummary": brief.get("what_happened", ""),
